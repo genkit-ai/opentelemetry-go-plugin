@@ -90,8 +90,8 @@ changelog:
 
 release:
   github:
-    owner: xavidop
-    name: genkit-opentelemetry-go
+    owner: genkit-ai
+    name: opentelemetry-go-plugin
   name_template: "{{.ProjectName}} v{{.Version}}"
   header: |
     ## OpenTelemetry Plugin for Genkit Go {{.Version}}
@@ -103,7 +103,7 @@ release:
     ### Installation
     
     ```bash
-    go get github.com/xavidop/genkit-opentelemetry-go@{{.Tag}}
+    go get github.com/genkit-ai/opentelemetry-go-plugin@{{.Tag}}
     ```
     
     ### What's Changed
