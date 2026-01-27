@@ -10,6 +10,28 @@ before:
     # Run tests before building
     - go test ./...
 
+builds:
+  # This is a library/plugin, so we don't need to build binaries
+  # But we can build the examples for demonstration
+  - id: basic-example
+    main: ./examples/basic
+    binary: basic-example
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
 archives:
   - id: examples
     formats: ['tar.gz']
