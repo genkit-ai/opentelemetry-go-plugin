@@ -4,7 +4,7 @@
   "description": "OpenTelemetry Plugin for Genkit Go",
   "repository": {
     "type": "git",
-    "url": "https://github.com/xavidop/genkit-opentelemetry-go.git"
+    "url": "https://github.com/genkit-ai/opentelemetry-go-plugin.git"
   },
   "license": "Apache-2.0",
   "author": "Xavier Portilla Edo <hello@xavidop.me>",

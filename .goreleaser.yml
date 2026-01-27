@@ -108,12 +108,12 @@ release:
     
     ### What's Changed
   footer: |
-    **Full Changelog**: https://github.com/xavidop/genkit-opentelemetry-go/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/genkit-ai/opentelemetry-go-plugin/compare/{{ .PreviousTag }}...{{ .Tag }}
 
     ## Documentation
 
-    - [README](https://github.com/xavidop/genkit-opentelemetry-go/blob/{{.Tag}}/README.md)
-    - [Examples](https://github.com/xavidop/genkit-opentelemetry-go/tree/{{.Tag}}/examples)
+    - [README](https://github.com/genkit-ai/opentelemetry-go-plugin/blob/{{.Tag}}/README.md)
+    - [Examples](https://github.com/genkit-ai/opentelemetry-go-plugin/tree/{{.Tag}}/examples)
     - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
   draft: false
   prerelease: auto
