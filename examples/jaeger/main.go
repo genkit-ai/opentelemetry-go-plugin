@@ -8,7 +8,7 @@ import (
 	"github.com/firebase/genkit/go/genkit"
 	opentelemetry "github.com/xavidop/genkit-opentelemetry-go"
 )
-
+// test
 func main() {
 	ctx := context.Background()
 
