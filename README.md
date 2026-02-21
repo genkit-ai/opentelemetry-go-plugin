@@ -152,6 +152,25 @@ otelPlugin := opentelemetry.New(opentelemetry.Config{
 })
 ```
 
+#### Langfuse
+
+```go
+// Build basic auth header value: base64("public_key:secret_key")
+auth := base64.StdEncoding.EncodeToString(
+	[]byte(os.Getenv("LANGFUSE_PUBLIC_KEY") + ":" + os.Getenv("LANGFUSE_SECRET_KEY")),
+)
+
+otelPlugin := opentelemetry.New(opentelemetry.Config{
+    ServiceName:  "my-app",
+    OTLPEndpoint: "https://cloud.langfuse.com/api/public/otel/v1/traces", // EU region
+    // OTLPEndpoint: "https://us.cloud.langfuse.com/api/public/otel/v1/traces", // US region
+    OTLPUseHTTP:  true,
+    OTLPHeaders: map[string]string{
+        "Authorization": "Basic " + auth,
+    },
+})
+```
+
 ## Local Testing with Docker
 
 ### 1. Start the Observability Stack
