@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,20 +27,27 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// hasScheme returns true if the endpoint contains a URL scheme.
-func hasScheme(endpoint string) bool {
-	return strings.Contains(endpoint, "://")
+// EndpointURL holds parsed OTLP endpoint components.
+type EndpointURL struct {
+	Scheme   string
+	HostPort string
+	Path     string
+	UseTLS   bool
 }
 
-// stripScheme removes the scheme (http:// or https://) from an endpoint.
-func stripScheme(endpoint string) string {
-	if strings.HasPrefix(endpoint, "https://") {
-		return endpoint[8:]
+// Parse parses an OTLP endpoint string into its components.
+func (e *EndpointURL) Parse(endpoint string) {
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Host == "" && u.Path == "" {
+		// If parsing fails or both host and path are empty, treat the entire string as host:port
+		e.HostPort = endpoint
+		return
 	}
-	if strings.HasPrefix(endpoint, "http://") {
-		return endpoint[7:]
-	}
-	return endpoint
+
+	e.Scheme = u.Scheme
+	e.UseTLS = e.Scheme == "https"
+	e.HostPort = u.Host
+	e.Path = u.Path
 }
 
 // createDefaultTraceExporter creates the default OTLP trace exporter.
@@ -50,28 +57,24 @@ func (ot *OpenTelemetry) createDefaultTraceExporter(ctx context.Context) (trace.
 		return stdouttrace.New(stdouttrace.WithPrettyPrint())
 	}
 
-	if ot.config.OTLPUseHTTP {
-		// For HTTP, the endpoint should not include the scheme for WithEndpoint()
-		endpoint := ot.config.OTLPEndpoint
+	var endpoint EndpointURL
+	endpoint.Parse(ot.config.OTLPEndpoint)
 
-		// Determine if we should use TLS based on the original endpoint
-		useTLS := false
-		if hasScheme(endpoint) {
-			useTLS = strings.HasPrefix(endpoint, "https://")
-			endpoint = stripScheme(endpoint)
+	if ot.config.OTLPUseHTTP {
+		opts := []otlptracehttp.Option{
+			otlptracehttp.WithEndpoint(endpoint.HostPort),
+			otlptracehttp.WithTimeout(30 * time.Second), // Add 30 second timeout
 		}
 
-		opts := []otlptracehttp.Option{
-			otlptracehttp.WithEndpoint(endpoint),
-			otlptracehttp.WithTimeout(30 * time.Second), // Add 30 second timeout
+		if endpoint.Path != "" {
+			opts = append(opts, otlptracehttp.WithURLPath(endpoint.Path))
 		}
 
 		if ot.config.OTLPHeaders != nil {
 			opts = append(opts, otlptracehttp.WithHeaders(ot.config.OTLPHeaders))
 		}
 
-		// Configure TLS based on the original scheme
-		if useTLS {
+		if endpoint.UseTLS {
 			opts = append(opts, otlptracehttp.WithTLSClientConfig(&tls.Config{}))
 		} else {
 			opts = append(opts, otlptracehttp.WithInsecure())
@@ -79,11 +82,8 @@ func (ot *OpenTelemetry) createDefaultTraceExporter(ctx context.Context) (trace.
 
 		return otlptracehttp.New(ctx, opts...)
 	} else {
-		// For gRPC, strip any scheme from the endpoint
-		endpoint := stripScheme(ot.config.OTLPEndpoint)
-
 		opts := []otlptracegrpc.Option{
-			otlptracegrpc.WithEndpoint(endpoint),
+			otlptracegrpc.WithEndpoint(endpoint.HostPort),
 			otlptracegrpc.WithTimeout(30 * time.Second), // Add 30 second timeout
 		}
 
@@ -94,8 +94,7 @@ func (ot *OpenTelemetry) createDefaultTraceExporter(ctx context.Context) (trace.
 		// Configure gRPC connection
 		dialOpts := []grpc.DialOption{}
 
-		// If original endpoint starts with https, use TLS
-		if len(ot.config.OTLPEndpoint) > 8 && ot.config.OTLPEndpoint[:8] == "https://" {
+		if endpoint.UseTLS {
 			dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 		} else {
 			opts = append(opts, otlptracegrpc.WithInsecure())
@@ -116,28 +115,24 @@ func (ot *OpenTelemetry) createDefaultMetricExporter(ctx context.Context) (metri
 		return stdoutmetric.New(stdoutmetric.WithPrettyPrint())
 	}
 
-	if ot.config.OTLPUseHTTP {
-		// For HTTP, the endpoint should not include the scheme for WithEndpoint()
-		endpoint := ot.config.OTLPEndpoint
+	var endpoint EndpointURL
+	endpoint.Parse(ot.config.OTLPEndpoint)
 
-		// Determine if we should use TLS based on the original endpoint
-		useTLS := false
-		if hasScheme(endpoint) {
-			useTLS = strings.HasPrefix(endpoint, "https://")
-			endpoint = stripScheme(endpoint)
+	if ot.config.OTLPUseHTTP {
+		opts := []otlpmetrichttp.Option{
+			otlpmetrichttp.WithEndpoint(endpoint.HostPort),
+			otlpmetrichttp.WithTimeout(30 * time.Second), // Add 30 second timeout
 		}
 
-		opts := []otlpmetrichttp.Option{
-			otlpmetrichttp.WithEndpoint(endpoint),
-			otlpmetrichttp.WithTimeout(30 * time.Second), // Add 30 second timeout
+		if endpoint.Path != "" {
+			opts = append(opts, otlpmetrichttp.WithURLPath(endpoint.Path))
 		}
 
 		if ot.config.OTLPHeaders != nil {
 			opts = append(opts, otlpmetrichttp.WithHeaders(ot.config.OTLPHeaders))
 		}
 
-		// Configure TLS based on the original scheme
-		if useTLS {
+		if endpoint.UseTLS {
 			opts = append(opts, otlpmetrichttp.WithTLSClientConfig(&tls.Config{}))
 		} else {
 			opts = append(opts, otlpmetrichttp.WithInsecure())
@@ -145,11 +140,8 @@ func (ot *OpenTelemetry) createDefaultMetricExporter(ctx context.Context) (metri
 
 		return otlpmetrichttp.New(ctx, opts...)
 	} else {
-		// For gRPC, strip any scheme from the endpoint
-		endpoint := stripScheme(ot.config.OTLPEndpoint)
-
 		opts := []otlpmetricgrpc.Option{
-			otlpmetricgrpc.WithEndpoint(endpoint),
+			otlpmetricgrpc.WithEndpoint(endpoint.HostPort),
 			otlpmetricgrpc.WithTimeout(30 * time.Second), // Add 30 second timeout
 		}
 
@@ -160,8 +152,7 @@ func (ot *OpenTelemetry) createDefaultMetricExporter(ctx context.Context) (metri
 		// Configure gRPC connection
 		dialOpts := []grpc.DialOption{}
 
-		// If original endpoint starts with https, use TLS
-		if len(ot.config.OTLPEndpoint) > 8 && ot.config.OTLPEndpoint[:8] == "https://" {
+		if endpoint.UseTLS {
 			dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 		} else {
 			opts = append(opts, otlpmetricgrpc.WithInsecure())
