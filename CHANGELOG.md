@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.11.4...v1.12.0) (2026-02-21)
+
+### 🚀 Features
+
+* bump dependencies ([f28b109](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/f28b109a9ecc45c5a07d16537f078b095068d83e))
+* Support custom URL path in OTLP HTTP endpoint ([c4224d7](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/c4224d7bcce83d7e0e5acda8cf860fe694b9ecbe))
+
+### 🐛 Bug Fixes
+
+* Parse OTLP endpoints and support URL paths ([2bd666a](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/2bd666a393bef8b2afd4259eefe8051df17248b2))
+
+### 📚 Documentation
+
+* Add Langfuse example to README ([98cc2db](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/98cc2dbf1f3c53388469fb0c45e45269225c24aa))
+
+### ⚙️ Continuous Integration
+
+* **deps:** bump actions/checkout from 4 to 6 ([58db380](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/58db380c11be1ea55cbcdd2bd99d6e5515d3fb61))
+
 ## [1.11.4](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.11.3...v1.11.4) (2026-01-27)
 
 ### 🐛 Bug Fixes
