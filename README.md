@@ -171,6 +171,19 @@ otelPlugin := opentelemetry.New(opentelemetry.Config{
 })
 ```
 
+#### Laminar
+
+```go
+otelPlugin := opentelemetry.New(opentelemetry.Config{
+    DisableMetricsExporter: true,
+    ServiceName:  "my-app",
+    OTLPEndpoint: "https://api.lmnr.ai:8443",
+    OTLPHeaders: map[string]string{
+        "Authorization": "Bearer " + os.Getenv("LAMINAR_API_KEY"),
+    },
+})
+```
+
 ## Local Testing with Docker
 
 ### 1. Start the Observability Stack
