@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.1](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.13.0...v1.13.1) (2026-02-22)
+
+### 🐛 Bug Fixes
+
+* Ensure configured OTel resource attributes are applied to traces and metrics ([f807315](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/f807315665fca9866fd58f179a397ea5ffb8f7ab))
+* Ensure configured OTel resource attributes are applied to traces and metrics ([be9851c](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/be9851c1e7906d78d967dc118f680a1cdbe98c77))
+
 ## [1.13.0](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.12.2...v1.13.0) (2026-02-22)
 
 ### 🚀 Features
