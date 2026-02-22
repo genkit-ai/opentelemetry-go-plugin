@@ -39,6 +39,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -200,10 +201,10 @@ func createStdoutMetricExporter() metric.Exporter {
 }
 
 // setupPrometheusMetrics creates a Prometheus metric exporter.
-func (ot *OpenTelemetry) setupPrometheusMetrics(ctx context.Context) error {
+func (ot *OpenTelemetry) setupPrometheusMetrics(ctx context.Context, res *resource.Resource) error {
 	if ot.config.MetricExporter != nil {
 		// Custom exporter provided, use parent logic
-		return ot.setupMetrics(ctx)
+		return ot.setupMetrics(ctx, res)
 	}
 
 	// Create Prometheus exporter
@@ -212,7 +213,10 @@ func (ot *OpenTelemetry) setupPrometheusMetrics(ctx context.Context) error {
 		return err
 	}
 
-	meterProvider := metric.NewMeterProvider(metric.WithReader(exporter))
+	meterProvider := metric.NewMeterProvider(
+		metric.WithReader(exporter),
+		metric.WithResource(res),
+	)
 	otel.SetMeterProvider(meterProvider)
 
 	// Start HTTP server for /metrics endpoint if enabled
