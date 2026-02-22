@@ -46,6 +46,12 @@ type Config struct {
 	// Export even in the dev environment.
 	ForceExport bool
 
+	// Disable trace exporter setup. Defaults to false.
+	DisableTracingExporter bool
+
+	// Disable metric exporter setup. Defaults to false.
+	DisableMetricsExporter bool
+
 	// The interval for exporting metric data.
 	// The default is 60 seconds.
 	MetricInterval time.Duration
@@ -153,13 +159,17 @@ func (ot *OpenTelemetry) Init(ctx context.Context) []api.Action {
 	}
 
 	// Initialize trace exporter
-	if err := ot.setupTracing(ctx); err != nil {
-		panic(fmt.Sprintf("failed to setup tracing: %v", err))
+	if ot.shouldSetupTracing() {
+		if err := ot.setupTracing(ctx); err != nil {
+			panic(fmt.Sprintf("failed to setup tracing: %v", err))
+		}
 	}
 
 	// Initialize metric exporter
-	if err := ot.setupMetrics(ctx); err != nil {
-		panic(fmt.Sprintf("failed to setup metrics: %v", err))
+	if ot.shouldSetupMetrics() {
+		if err := ot.setupMetrics(ctx); err != nil {
+			panic(fmt.Sprintf("failed to setup metrics: %v", err))
+		}
 	}
 
 	// Initialize log handler
@@ -171,6 +181,14 @@ func (ot *OpenTelemetry) Init(ctx context.Context) []api.Action {
 	ot.setupSignalHandler()
 
 	return []api.Action{}
+}
+
+func (ot *OpenTelemetry) shouldSetupTracing() bool {
+	return !ot.config.DisableTracingExporter
+}
+
+func (ot *OpenTelemetry) shouldSetupMetrics() bool {
+	return !ot.config.DisableMetricsExporter
 }
 
 // setupTracing configures trace export.

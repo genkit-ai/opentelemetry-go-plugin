@@ -161,6 +161,7 @@ auth := base64.StdEncoding.EncodeToString(
 )
 
 otelPlugin := opentelemetry.New(opentelemetry.Config{
+    DisableMetricsExporter: true,
     ServiceName:  "my-app",
     OTLPEndpoint: "https://cloud.langfuse.com/api/public/otel/v1/traces", // EU region
     // OTLPEndpoint: "https://us.cloud.langfuse.com/api/public/otel/v1/traces", // US region
@@ -240,6 +241,12 @@ export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=stdout
 type Config struct {
     // Export even in the dev environment
     ForceExport bool
+
+    // Disable trace exporter setup (default: false)
+    DisableTracingExporter bool
+
+    // Disable metric exporter setup (default: false)
+    DisableMetricsExporter bool
 
     // The interval for exporting metric data (default: 60s)
     MetricInterval time.Duration
