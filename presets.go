@@ -117,6 +117,12 @@ func mergeConfig(base *Config, custom Config) {
 	if custom.ForceExport {
 		base.ForceExport = custom.ForceExport
 	}
+	if custom.DisableTracingExporter {
+		base.DisableTracingExporter = custom.DisableTracingExporter
+	}
+	if custom.DisableMetricsExporter {
+		base.DisableMetricsExporter = custom.DisableMetricsExporter
+	}
 	if custom.MetricInterval != 0 {
 		base.MetricInterval = custom.MetricInterval
 	}
