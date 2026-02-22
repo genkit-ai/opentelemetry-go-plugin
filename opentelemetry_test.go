@@ -20,7 +20,14 @@
 // with sensible defaults while allowing customization of exporters.
 package opentelemetry
 
-import "testing"
+import (
+	"context"
+	"sync"
+	"testing"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
+)
 
 func TestShouldSetupExporters(t *testing.T) {
 	testCases := []struct {
@@ -73,4 +80,110 @@ func TestShouldSetupExporters(t *testing.T) {
 			}
 		})
 	}
+}
+
+type captureSpanExporter struct {
+	mu    sync.Mutex
+	spans []trace.ReadOnlySpan
+}
+
+func (e *captureSpanExporter) ExportSpans(_ context.Context, spans []trace.ReadOnlySpan) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.spans = append(e.spans, spans...)
+	return nil
+}
+
+func (e *captureSpanExporter) Shutdown(context.Context) error {
+	return nil
+}
+
+func (e *captureSpanExporter) spansSnapshot() []trace.ReadOnlySpan {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	out := make([]trace.ReadOnlySpan, len(e.spans))
+	copy(out, e.spans)
+	return out
+}
+
+func TestSetupTracingSetsConfiguredResourceAttributesOnExportedSpans(t *testing.T) {
+	t.Cleanup(func() {
+		otel.SetTracerProvider(trace.NewTracerProvider())
+	})
+
+	exporter := &captureSpanExporter{}
+	ot := New(Config{
+		ForceExport:    true,
+		ServiceName:    "checkout-service",
+		ServiceVersion: "1.2.3",
+		ResourceAttributes: map[string]string{
+			"deployment.environment": "test",
+		},
+		TraceExporter: exporter,
+	})
+
+	res, err := ot.createResource(context.Background())
+	if err != nil {
+		t.Fatalf("createResource() error = %v", err)
+	}
+
+	if err := ot.setupTracing(context.Background(), res); err != nil {
+		t.Fatalf("setupTracing() error = %v", err)
+	}
+
+	_, span := otel.Tracer("test").Start(context.Background(), "test-span")
+	span.End()
+
+	tp, ok := otel.GetTracerProvider().(*trace.TracerProvider)
+	if !ok {
+		t.Fatalf("global tracer provider is %T, want *trace.TracerProvider", otel.GetTracerProvider())
+	}
+	if err := tp.ForceFlush(context.Background()); err != nil {
+		t.Fatalf("ForceFlush() error = %v", err)
+	}
+
+	spans := exporter.spansSnapshot()
+	if len(spans) == 0 {
+		t.Fatal("expected at least one exported span")
+	}
+
+	t.Run("service name", func(t *testing.T) {
+		serviceName, ok := resourceAttributeValue(spans[0], "service.name")
+		if !ok {
+			t.Fatal("service.name attribute not found on span resource")
+		}
+		if serviceName != "checkout-service" {
+			t.Fatalf("service.name = %q, want %q", serviceName, "checkout-service")
+		}
+	})
+
+	t.Run("service version", func(t *testing.T) {
+		serviceVersion, ok := resourceAttributeValue(spans[0], "service.version")
+		if !ok {
+			t.Fatal("service.version attribute not found on span resource")
+		}
+		if serviceVersion != "1.2.3" {
+			t.Fatalf("service.version = %q, want %q", serviceVersion, "1.2.3")
+		}
+	})
+
+	t.Run("resource attributes", func(t *testing.T) {
+		environment, ok := resourceAttributeValue(spans[0], "deployment.environment")
+		if !ok {
+			t.Fatal("deployment.environment attribute not found on span resource")
+		}
+		if environment != "test" {
+			t.Fatalf("deployment.environment = %q, want %q", environment, "test")
+		}
+	})
+}
+
+func resourceAttributeValue(span trace.ReadOnlySpan, key string) (string, bool) {
+	for _, attr := range span.Resource().Attributes() {
+		if string(attr.Key) == key {
+			return attr.Value.AsString(), true
+		}
+	}
+	return "", false
 }

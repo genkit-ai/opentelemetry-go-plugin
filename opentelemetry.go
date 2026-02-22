@@ -34,8 +34,11 @@ import (
 	"github.com/firebase/genkit/go/core/api"
 	"github.com/firebase/genkit/go/core/tracing"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
 )
 
 // Config configures the OpenTelemetry plugin.
@@ -158,16 +161,21 @@ func (ot *OpenTelemetry) Init(ctx context.Context) []api.Action {
 		return nil
 	}
 
+	res, err := ot.createResource(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to initialize resource: %v", err))
+	}
+
 	// Initialize trace exporter
 	if ot.shouldSetupTracing() {
-		if err := ot.setupTracing(ctx); err != nil {
+		if err := ot.setupTracing(ctx, res); err != nil {
 			panic(fmt.Sprintf("failed to setup tracing: %v", err))
 		}
 	}
 
 	// Initialize metric exporter
 	if ot.shouldSetupMetrics() {
-		if err := ot.setupMetrics(ctx); err != nil {
+		if err := ot.setupMetrics(ctx, res); err != nil {
 			panic(fmt.Sprintf("failed to setup metrics: %v", err))
 		}
 	}
@@ -192,7 +200,7 @@ func (ot *OpenTelemetry) shouldSetupMetrics() bool {
 }
 
 // setupTracing configures trace export.
-func (ot *OpenTelemetry) setupTracing(ctx context.Context) error {
+func (ot *OpenTelemetry) setupTracing(ctx context.Context, res *resource.Resource) error {
 	var spanExporter trace.SpanExporter
 	var err error
 
@@ -205,17 +213,24 @@ func (ot *OpenTelemetry) setupTracing(ctx context.Context) error {
 		}
 	}
 
-	spanProcessor := trace.NewBatchSpanProcessor(spanExporter)
-	tracing.TracerProvider().RegisterSpanProcessor(spanProcessor)
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithResource(res),
+	)
+	otel.SetTracerProvider(tracerProvider)
+
+	tracing.TracerProvider().
+		RegisterSpanProcessor(
+			trace.NewBatchSpanProcessor(spanExporter),
+		)
 
 	return nil
 }
 
 // setupMetrics configures metric export.
-func (ot *OpenTelemetry) setupMetrics(ctx context.Context) error {
+func (ot *OpenTelemetry) setupMetrics(ctx context.Context, res *resource.Resource) error {
 	// Use specialized Prometheus setup if this is a Prometheus preset or if forced
 	if (ot.presetType != nil && *ot.presetType == PresetPrometheus) || ot.config.EnablePrometheusExporter {
-		return ot.setupPrometheusMetrics(ctx)
+		return ot.setupPrometheusMetrics(ctx, res)
 	}
 
 	var metricExporter metric.Exporter
@@ -235,7 +250,10 @@ func (ot *OpenTelemetry) setupMetrics(ctx context.Context) error {
 		metric.WithInterval(ot.config.MetricInterval),
 	)
 
-	meterProvider := metric.NewMeterProvider(metric.WithReader(reader))
+	meterProvider := metric.NewMeterProvider(
+		metric.WithReader(reader),
+		metric.WithResource(res),
+	)
 	otel.SetMeterProvider(meterProvider)
 
 	return nil
@@ -255,6 +273,27 @@ func (ot *OpenTelemetry) setupLogging() error {
 	slog.SetDefault(logger)
 
 	return nil
+}
+
+// createResource builds the telemetry resource metadata used for traces and metrics.
+func (ot *OpenTelemetry) createResource(ctx context.Context) (*resource.Resource, error) {
+	attrs := []attribute.KeyValue{
+		semconv.ServiceName(ot.config.ServiceName),
+	}
+
+	if ot.config.ServiceVersion != "" {
+		attrs = append(attrs, semconv.ServiceVersion(ot.config.ServiceVersion))
+	}
+
+	for k, v := range ot.config.ResourceAttributes {
+		attrs = append(attrs, attribute.String(k, v))
+	}
+
+	return resource.New(
+		ctx,
+		resource.WithTelemetrySDK(),
+		resource.WithAttributes(attrs...),
+	)
 }
 
 // Shutdown gracefully shuts down the OpenTelemetry plugin and any running servers.
