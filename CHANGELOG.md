@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.13.2...v1.14.0) (2026-03-09)
+
+### 🚀 Features
+
+* move to go 1.26 ([bb79040](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/bb79040759e3eeba06bccb26e8456e854e444f0f))
+
 ## [1.13.2](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.13.1...v1.13.2) (2026-02-23)
 
 ### ⚙️ Continuous Integration
