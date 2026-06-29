@@ -3,7 +3,7 @@ module github.com/xavidop/genkit-opentelemetry-go
 go 1.26.0
 
 require (
-	github.com/firebase/genkit/go v1.9.0
+	github.com/firebase/genkit/go v1.10.0
 	github.com/prometheus/client_golang v1.23.2
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.44.0
