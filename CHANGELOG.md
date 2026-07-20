@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.3](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.15.2...v1.15.3) (2026-07-20)
+
+### ⚙️ Continuous Integration
+
+* **deps:** bump actions/setup-go from 6 to 7 ([1bf7362](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/1bf7362bfd2e8e655d958338c1b600eb308dc248))
+* **deps:** bump actions/setup-node from 6 to 7 ([da785be](https://github.com/genkit-ai/opentelemetry-go-plugin/commit/da785be7f260ecfa2a9cdec3b6579e017e503b27))
+
 ## [1.15.2](https://github.com/genkit-ai/opentelemetry-go-plugin/compare/v1.15.1...v1.15.2) (2026-06-29)
 
 ### ⚙️ Continuous Integration
