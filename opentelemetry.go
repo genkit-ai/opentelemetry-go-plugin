@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"github.com/firebase/genkit/go/core/api"
-	"github.com/firebase/genkit/go/core/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -215,13 +214,9 @@ func (ot *OpenTelemetry) setupTracing(ctx context.Context, res *resource.Resourc
 
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithResource(res),
+		trace.WithBatcher(spanExporter),
 	)
 	otel.SetTracerProvider(tracerProvider)
-
-	tracing.TracerProvider().
-		RegisterSpanProcessor(
-			trace.NewBatchSpanProcessor(spanExporter),
-		)
 
 	return nil
 }
